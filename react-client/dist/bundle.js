@@ -63,19 +63,19 @@
 	
 	var _map2 = _interopRequireDefault(_map);
 	
-	var _basicDetails = __webpack_require__(/*! ./components/basicDetails.jsx */ 52);
+	var _basicDetails = __webpack_require__(/*! ./components/basicDetails.jsx */ 51);
 	
 	var _basicDetails2 = _interopRequireDefault(_basicDetails);
 	
-	var _dataSelection = __webpack_require__(/*! ./components/dataSelection.jsx */ 53);
+	var _dataSelection = __webpack_require__(/*! ./components/dataSelection.jsx */ 52);
 	
 	var _dataSelection2 = _interopRequireDefault(_dataSelection);
 	
-	var _axios = __webpack_require__(/*! axios */ 54);
+	var _axios = __webpack_require__(/*! axios */ 53);
 	
 	var _axios2 = _interopRequireDefault(_axios);
 	
-	var _state_coordinates = __webpack_require__(/*! ./state_coordinates */ 80);
+	var _state_coordinates = __webpack_require__(/*! ./state_coordinates */ 79);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -85,6 +85,18 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
+	var bannerStyle = {
+	  width: '100%',
+	  height: '80px',
+	  backgroundColor: '#00004d',
+	  position: 'relative',
+	  marginBottom: '20px',
+	  color: 'white',
+	  verticalAlign: 'middle',
+	  padding: '10px',
+	  fontFamily: 'Arial'
+	};
+	
 	var App = function (_React$Component) {
 	  _inherits(App, _React$Component);
 	
@@ -93,7 +105,13 @@
 	
 	    var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 	
-	    _this.state = { playCoordinates: [], selectedFile: null, indexes: [] };
+	    _this.state = {
+	      playCoordinates: [],
+	      selectedFile: null,
+	      indexes: [],
+	      currentYear: '',
+	      dataSelected: false
+	    };
 	    _this.componentDidMount = _this.componentDidMount.bind(_this);
 	    _this.handleDataChange = _this.handleDataChange.bind(_this);
 	    _this.calculateCenter = _this.calculateCenter.bind(_this);
@@ -101,6 +119,7 @@
 	    _this.onFileUpload = _this.onFileUpload.bind(_this);
 	    _this.onFileChange = _this.onFileChange.bind(_this);
 	    _this.fileData = _this.fileData.bind(_this);
+	    _this.yearChange = _this.yearChange.bind(_this);
 	    return _this;
 	  }
 	
@@ -110,7 +129,8 @@
 	      var _this2 = this;
 	
 	      _axios2.default.get('/data/?dataType=' + event.target.value).then(function (data) {
-	        _this2.setState({ currentData: data.data }, function () {
+	        _this2.setState({ currentData: data.data, dataSelected: true }, function () {
+	          console.log('this.state.currentData', _this2.state.currentData);
 	          _this2.calculateCenter();
 	        });
 	      }).catch(function (err) {
@@ -120,20 +140,28 @@
 	  }, {
 	    key: 'playMap',
 	    value: function playMap() {
-	      console.log('this.state', this.state);
-	      var starter = [];
+	      var _this3 = this;
 	
-	      var _loop = function _loop(year) {
-	        setTimeout(function () {
-	          var temp = this.state.playCoordinates;
-	          temp.push(year);
-	          setState({ playCoordinates: temp });
-	        }, 400);
-	      };
-	
-	      for (var year = 0; year < this.state.finalCoordinates.length; year++) {
-	        _loop(year);
-	      }
+	      var counter = 0;
+	      var maxCounter = this.state.finalCoordinates.length;
+	      this.timer = setInterval(function () {
+	        if (counter === maxCounter - 1) {
+	          clearInterval(_this3.timer);
+	        }
+	        var currentYear = _this3.state.currentData[counter]['Year'];
+	        var currentCoords = _this3.state.playCoordinates;
+	        currentCoords.push(_this3.state.finalCoordinates[counter]);
+	        _this3.yearChange(currentCoords, currentYear);
+	        counter++;
+	      }, 200);
+	    }
+	  }, {
+	    key: 'yearChange',
+	    value: function yearChange(newEntry, currentYear) {
+	      this.setState({
+	        playCoordinates: newEntry,
+	        currentYear: currentYear
+	      });
 	    }
 	
 	    // On file select (from the pop up)
@@ -151,12 +179,10 @@
 	    key: 'onFileUpload',
 	    value: function onFileUpload() {
 	      // Create an object of formData
-	      console.log('this.state before file this.onFileUpload', this.state);
 	      var formData = new FormData();
 	      // Update the formData object
 	      formData.append('myFile', this.state.selectedFile, this.state.selectedFile.name);
 	      // Details of the uploaded file
-	      console.log('formData', formData);
 	      // Request made to the backend api
 	      // Send formData object
 	      _axios2.default.post('/data', formData).then(function (data) {
@@ -207,9 +233,16 @@
 	          null,
 	          _react2.default.createElement('br', null),
 	          _react2.default.createElement(
-	            'h4',
-	            null,
-	            'Choose before Pressing the Upload button'
+	            'div',
+	            { style: { fontStyle: 'italic' } },
+	            'Note: the uploaded data must be saved in a precise format by year and abbreviated state acronym. A template can be found',
+	            ' ',
+	            _react2.default.createElement(
+	              'a',
+	              { href: 'https://docs.google.com/spreadsheets/d/1wW2-udneHi491-px6hM3VsZXi7ak9NGm-Yd04eJi8c0/edit?usp=sharing' },
+	              'here'
+	            ),
+	            '.'
 	          )
 	        );
 	      }
@@ -227,7 +260,6 @@
 	        for (var eachState = 0; eachState < _state_coordinates.states.length; eachState++) {
 	          //create variables from state data for ease
 	          var dataAmount = this.state.currentData[row][_state_coordinates.states[eachState]['name']];
-	          // console.log(states[eachState]['name'], dataAmount);
 	          var northCoord = _state_coordinates.states[eachState]['north'];
 	          var westCoord = _state_coordinates.states[eachState]['west'];
 	          //get totals for coordinates
@@ -256,42 +288,124 @@
 	  }, {
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
-	      var _this3 = this;
+	      var _this4 = this;
 	
 	      _axios2.default.get('/indexes').then(function (data) {
-	        _this3.setState({ indexes: data.data });
+	        _this4.setState({ indexes: data.data });
 	      });
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      console.log('this.state.indexes', this.state.indexes);
+	      var playbutton = _react2.default.createElement('div', null);
+	      if (this.state.dataSelected === true) {
+	        playbutton = _react2.default.createElement(
+	          'div',
+	          null,
+	          _react2.default.createElement(
+	            'button',
+	            { 'class': 'button is-medium', onClick: this.playMap },
+	            'Play!'
+	          )
+	        );
+	      }
+	
 	      return _react2.default.createElement(
 	        'div',
 	        null,
-	        _react2.default.createElement(_map2.default, { coordinates: this.state.finalCoordinates }),
 	        _react2.default.createElement(
 	          'div',
-	          { style: { marginTop: '20px' } },
-	          _react2.default.createElement(_dataSelection2.default, {
-	            handleDataChange: this.handleDataChange,
-	            state: this.state
-	          })
+	          { style: bannerStyle },
+	          _react2.default.createElement(
+	            'h1',
+	            { 'class': 'title is-1', style: { color: 'white' } },
+	            'Macro Trends'
+	          )
 	        ),
 	        _react2.default.createElement(
 	          'div',
-	          { style: { marginTop: '20px' } },
+	          { style: { float: 'left', margin: '10px', width: '300px' } },
 	          _react2.default.createElement(
 	            'div',
-	            null,
-	            _react2.default.createElement('input', { type: 'file', onChange: this.onFileChange }),
+	            { style: { marginTop: '20px' } },
+	            _react2.default.createElement(_dataSelection2.default, {
+	              handleDataChange: this.handleDataChange,
+	              state: this.state
+	            })
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { 'class': 'columns', style: { marginTop: '15px' } },
 	            _react2.default.createElement(
-	              'button',
-	              { onClick: this.onFileUpload },
-	              'Upload!'
+	              'div',
+	              { 'class': 'column' },
+	              playbutton
+	            ),
+	            _react2.default.createElement(
+	              'div',
+	              { 'class': 'column', style: { verticalAlign: 'middle' } },
+	              _react2.default.createElement(_basicDetails2.default, { year: this.state.currentYear })
 	            )
 	          ),
-	          this.fileData()
+	          _react2.default.createElement(
+	            'div',
+	            { style: { marginTop: '20px' } },
+	            _react2.default.createElement('hr', null),
+	            _react2.default.createElement(
+	              'div',
+	              null,
+	              _react2.default.createElement(
+	                'h2',
+	                { 'class': 'subtitle is-4', style: { textAlign: 'center' } },
+	                'Or upload your own data!'
+	              ),
+	              _react2.default.createElement(
+	                'div',
+	                { 'class': 'columns', style: { marginTop: '15px' } },
+	                _react2.default.createElement(
+	                  'div',
+	                  { 'class': 'column', style: { textAlign: 'center' } },
+	                  _react2.default.createElement(
+	                    'div',
+	                    { 'class': 'file' },
+	                    _react2.default.createElement(
+	                      'label',
+	                      { 'class': 'file-label' },
+	                      _react2.default.createElement('input', {
+	                        'class': 'file-input',
+	                        type: 'file',
+	                        onChange: this.onFileChange
+	                      }),
+	                      _react2.default.createElement(
+	                        'span',
+	                        { 'class': 'file-cta' },
+	                        _react2.default.createElement(
+	                          'span',
+	                          { 'class': 'file-label' },
+	                          'Choose a file\u2026'
+	                        )
+	                      )
+	                    )
+	                  )
+	                ),
+	                _react2.default.createElement(
+	                  'div',
+	                  { 'class': 'column', style: { textAlign: 'center' } },
+	                  _react2.default.createElement(
+	                    'button',
+	                    { 'class': 'button ', onClick: this.onFileUpload },
+	                    'Upload!'
+	                  )
+	                )
+	              )
+	            ),
+	            this.fileData()
+	          )
+	        ),
+	        _react2.default.createElement(
+	          'div',
+	          { style: { float: 'left', margin: '10px' } },
+	          _react2.default.createElement(_map2.default, { coordinates: this.state.playCoordinates })
 	        )
 	      );
 	    }
@@ -29404,7 +29518,7 @@
 	
 	var _googleMapReact2 = _interopRequireDefault(_googleMapReact);
 	
-	var _API_KEY = __webpack_require__(/*! ../../../API_KEY */ 51);
+	var _API_KEY = __webpack_require__(/*! ../../../API_KEY */ 80);
 	
 	var _API_KEY2 = _interopRequireDefault(_API_KEY);
 	
@@ -29416,19 +29530,23 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var dot = {
-	  height: '25px',
-	  width: '25px',
-	  backgroundColor: '#bbb',
-	  borderRadius: '50%',
-	  display: 'inline-block'
+	var dotStyle = {
+	  position: 'absolute',
+	  width: 4,
+	  height: 4,
+	  left: 4 / 2,
+	  top: 4 / 2,
+	  border: '1px solid #000066',
+	  borderRadius: 2,
+	  backgroundColor: '#000066',
+	  color: '#000066'
 	};
 	
-	var AnyReactComponent = function AnyReactComponent(_ref) {
+	var Point = function Point(_ref) {
 	  var text = _ref.text;
 	  return _react2.default.createElement(
 	    'div',
-	    null,
+	    { style: dotStyle },
 	    text
 	  );
 	};
@@ -29441,13 +29559,14 @@
 	
 	    var _this = _possibleConstructorReturn(this, (Map.__proto__ || Object.getPrototypeOf(Map)).call(this, props));
 	
-	    _this.state = { center: { lat: 39.31, lng: -96.45 }, zoom: 4.3 };
+	    _this.state = { center: { lat: 39.31, lng: -96.45 }, zoom: 3.9 };
 	    return _this;
 	  }
 	
 	  _createClass(Map, [{
 	    key: 'render',
 	    value: function render() {
+	      console.log('this.props.coordinates in map', this.props.coordinates);
 	      {
 	        if (this.props.coordinates !== undefined) {
 	          var coordinates = this.props.coordinates;
@@ -29460,7 +29579,7 @@
 	        // Important! Always set the container height explicitly
 	        _react2.default.createElement(
 	          'div',
-	          { style: { height: '600px', width: '1000px' } },
+	          { style: { height: '400px', width: '666px' } },
 	          _react2.default.createElement(
 	            _googleMapReact2.default,
 	            {
@@ -29469,11 +29588,7 @@
 	              defaultZoom: this.state.zoom
 	            },
 	            coordinates.map(function (eachYear) {
-	              return _react2.default.createElement(AnyReactComponent, {
-	                lat: eachYear.north,
-	                lng: eachYear.west,
-	                text: 'o'
-	              });
+	              return _react2.default.createElement(Point, { lat: eachYear.north, lng: eachYear.west, text: '' });
 	            })
 	          )
 	        )
@@ -33944,18 +34059,6 @@
 
 /***/ }),
 /* 51 */
-/*!********************!*\
-  !*** ./API_KEY.js ***!
-  \********************/
-/***/ (function(module, exports) {
-
-	const GOOGLE_API_KEY = 'AIzaSyDUNXz5s2R30IpoysuPOr-_Klcq8syl37Y';
-	
-	module.exports = GOOGLE_API_KEY;
-
-
-/***/ }),
-/* 52 */
 /*!******************************************************!*\
   !*** ./react-client/src/components/basicDetails.jsx ***!
   \******************************************************/
@@ -33974,16 +34077,30 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var BasicDetails = function BasicDetails(props) {
+	  var year = _react2.default.createElement('div', null);
+	  if (props.year !== '') {
+	    year = _react2.default.createElement(
+	      'div',
+	      { style: { float: 'left', margin: '5px' } },
+	      _react2.default.createElement(
+	        'h2',
+	        { 'class': 'subtitle is-4' },
+	        'Year: ',
+	        props.year
+	      )
+	    );
+	  }
+	
 	  return _react2.default.createElement(
 	    'div',
 	    null,
-	    'Basic Details'
+	    year
 	  );
 	};
 	exports.default = BasicDetails;
 
 /***/ }),
-/* 53 */
+/* 52 */
 /*!*******************************************************!*\
   !*** ./react-client/src/components/dataSelection.jsx ***!
   \*******************************************************/
@@ -34002,42 +34119,49 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var DataSelection = function DataSelection(props) {
-	  console.log('props.state in datadelection', props.state.indexes);
 	  return _react2.default.createElement(
 	    'div',
 	    null,
-	    'Data Selection',
 	    _react2.default.createElement(
-	      'select',
-	      { onChange: props.handleDataChange },
+	      'h2',
+	      { 'class': 'subtitle is-4', style: { textAlign: 'center' } },
+	      'Choose an existing dataset'
+	    ),
+	    _react2.default.createElement(
+	      'div',
+	      { 'class': 'select is-medium' },
 	      _react2.default.createElement(
-	        'option',
-	        { value: 'none', selected: true, disabled: true, hidden: true },
-	        'Select an Option'
-	      ),
-	      props.state.indexes.map(function (databaseOption) {
-	        return _react2.default.createElement(
+	        'select',
+	        { onChange: props.handleDataChange },
+	        _react2.default.createElement(
 	          'option',
-	          { value: databaseOption.dataName },
-	          databaseOption.dataName
-	        );
-	      })
+	          { value: 'none', selected: true, disabled: true, hidden: true },
+	          'Select an option'
+	        ),
+	        props.state.indexes.map(function (databaseOption) {
+	          return _react2.default.createElement(
+	            'option',
+	            { value: databaseOption.dataName },
+	            databaseOption.dataName
+	          );
+	        })
+	      )
 	    )
 	  );
 	};
 	exports.default = DataSelection;
 
 /***/ }),
-/* 54 */
+/* 53 */
 /*!**************************!*\
   !*** ./~/axios/index.js ***!
   \**************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(/*! ./lib/axios */ 55);
+	module.exports = __webpack_require__(/*! ./lib/axios */ 54);
 
 /***/ }),
-/* 55 */
+/* 54 */
 /*!******************************!*\
   !*** ./~/axios/lib/axios.js ***!
   \******************************/
@@ -34045,11 +34169,11 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./utils */ 56);
-	var bind = __webpack_require__(/*! ./helpers/bind */ 57);
-	var Axios = __webpack_require__(/*! ./core/Axios */ 58);
-	var mergeConfig = __webpack_require__(/*! ./core/mergeConfig */ 76);
-	var defaults = __webpack_require__(/*! ./defaults */ 64);
+	var utils = __webpack_require__(/*! ./utils */ 55);
+	var bind = __webpack_require__(/*! ./helpers/bind */ 56);
+	var Axios = __webpack_require__(/*! ./core/Axios */ 57);
+	var mergeConfig = __webpack_require__(/*! ./core/mergeConfig */ 75);
+	var defaults = __webpack_require__(/*! ./defaults */ 63);
 	
 	/**
 	 * Create an instance of Axios
@@ -34082,15 +34206,15 @@
 	};
 	
 	// Expose Cancel & CancelToken
-	axios.Cancel = __webpack_require__(/*! ./cancel/Cancel */ 77);
-	axios.CancelToken = __webpack_require__(/*! ./cancel/CancelToken */ 78);
-	axios.isCancel = __webpack_require__(/*! ./cancel/isCancel */ 63);
+	axios.Cancel = __webpack_require__(/*! ./cancel/Cancel */ 76);
+	axios.CancelToken = __webpack_require__(/*! ./cancel/CancelToken */ 77);
+	axios.isCancel = __webpack_require__(/*! ./cancel/isCancel */ 62);
 	
 	// Expose all/spread
 	axios.all = function all(promises) {
 	  return Promise.all(promises);
 	};
-	axios.spread = __webpack_require__(/*! ./helpers/spread */ 79);
+	axios.spread = __webpack_require__(/*! ./helpers/spread */ 78);
 	
 	module.exports = axios;
 	
@@ -34099,7 +34223,7 @@
 
 
 /***/ }),
-/* 56 */
+/* 55 */
 /*!******************************!*\
   !*** ./~/axios/lib/utils.js ***!
   \******************************/
@@ -34107,7 +34231,7 @@
 
 	'use strict';
 	
-	var bind = __webpack_require__(/*! ./helpers/bind */ 57);
+	var bind = __webpack_require__(/*! ./helpers/bind */ 56);
 	
 	/*global toString:true*/
 	
@@ -34452,7 +34576,7 @@
 
 
 /***/ }),
-/* 57 */
+/* 56 */
 /*!*************************************!*\
   !*** ./~/axios/lib/helpers/bind.js ***!
   \*************************************/
@@ -34472,7 +34596,7 @@
 
 
 /***/ }),
-/* 58 */
+/* 57 */
 /*!***********************************!*\
   !*** ./~/axios/lib/core/Axios.js ***!
   \***********************************/
@@ -34480,11 +34604,11 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
-	var buildURL = __webpack_require__(/*! ../helpers/buildURL */ 59);
-	var InterceptorManager = __webpack_require__(/*! ./InterceptorManager */ 60);
-	var dispatchRequest = __webpack_require__(/*! ./dispatchRequest */ 61);
-	var mergeConfig = __webpack_require__(/*! ./mergeConfig */ 76);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
+	var buildURL = __webpack_require__(/*! ../helpers/buildURL */ 58);
+	var InterceptorManager = __webpack_require__(/*! ./InterceptorManager */ 59);
+	var dispatchRequest = __webpack_require__(/*! ./dispatchRequest */ 60);
+	var mergeConfig = __webpack_require__(/*! ./mergeConfig */ 75);
 	
 	/**
 	 * Create a new instance of Axios
@@ -34575,7 +34699,7 @@
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /*!*****************************************!*\
   !*** ./~/axios/lib/helpers/buildURL.js ***!
   \*****************************************/
@@ -34583,7 +34707,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	function encode(val) {
 	  return encodeURIComponent(val).
@@ -34655,7 +34779,7 @@
 
 
 /***/ }),
-/* 60 */
+/* 59 */
 /*!************************************************!*\
   !*** ./~/axios/lib/core/InterceptorManager.js ***!
   \************************************************/
@@ -34663,7 +34787,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	function InterceptorManager() {
 	  this.handlers = [];
@@ -34716,7 +34840,7 @@
 
 
 /***/ }),
-/* 61 */
+/* 60 */
 /*!*********************************************!*\
   !*** ./~/axios/lib/core/dispatchRequest.js ***!
   \*********************************************/
@@ -34724,10 +34848,10 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
-	var transformData = __webpack_require__(/*! ./transformData */ 62);
-	var isCancel = __webpack_require__(/*! ../cancel/isCancel */ 63);
-	var defaults = __webpack_require__(/*! ../defaults */ 64);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
+	var transformData = __webpack_require__(/*! ./transformData */ 61);
+	var isCancel = __webpack_require__(/*! ../cancel/isCancel */ 62);
+	var defaults = __webpack_require__(/*! ../defaults */ 63);
 	
 	/**
 	 * Throws a `Cancel` if cancellation has been requested.
@@ -34804,7 +34928,7 @@
 
 
 /***/ }),
-/* 62 */
+/* 61 */
 /*!*******************************************!*\
   !*** ./~/axios/lib/core/transformData.js ***!
   \*******************************************/
@@ -34812,7 +34936,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	/**
 	 * Transform the data for a request or a response
@@ -34833,7 +34957,7 @@
 
 
 /***/ }),
-/* 63 */
+/* 62 */
 /*!****************************************!*\
   !*** ./~/axios/lib/cancel/isCancel.js ***!
   \****************************************/
@@ -34847,7 +34971,7 @@
 
 
 /***/ }),
-/* 64 */
+/* 63 */
 /*!*********************************!*\
   !*** ./~/axios/lib/defaults.js ***!
   \*********************************/
@@ -34855,8 +34979,8 @@
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 	
-	var utils = __webpack_require__(/*! ./utils */ 56);
-	var normalizeHeaderName = __webpack_require__(/*! ./helpers/normalizeHeaderName */ 65);
+	var utils = __webpack_require__(/*! ./utils */ 55);
+	var normalizeHeaderName = __webpack_require__(/*! ./helpers/normalizeHeaderName */ 64);
 	
 	var DEFAULT_CONTENT_TYPE = {
 	  'Content-Type': 'application/x-www-form-urlencoded'
@@ -34872,10 +34996,10 @@
 	  var adapter;
 	  if (typeof XMLHttpRequest !== 'undefined') {
 	    // For browsers use XHR adapter
-	    adapter = __webpack_require__(/*! ./adapters/xhr */ 66);
+	    adapter = __webpack_require__(/*! ./adapters/xhr */ 65);
 	  } else if (typeof process !== 'undefined' && Object.prototype.toString.call(process) === '[object process]') {
 	    // For node use HTTP adapter
-	    adapter = __webpack_require__(/*! ./adapters/http */ 66);
+	    adapter = __webpack_require__(/*! ./adapters/http */ 65);
 	  }
 	  return adapter;
 	}
@@ -34954,7 +35078,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../process/browser.js */ 2)))
 
 /***/ }),
-/* 65 */
+/* 64 */
 /*!****************************************************!*\
   !*** ./~/axios/lib/helpers/normalizeHeaderName.js ***!
   \****************************************************/
@@ -34962,7 +35086,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ../utils */ 56);
+	var utils = __webpack_require__(/*! ../utils */ 55);
 	
 	module.exports = function normalizeHeaderName(headers, normalizedName) {
 	  utils.forEach(headers, function processHeader(value, name) {
@@ -34975,7 +35099,7 @@
 
 
 /***/ }),
-/* 66 */
+/* 65 */
 /*!*************************************!*\
   !*** ./~/axios/lib/adapters/xhr.js ***!
   \*************************************/
@@ -34983,13 +35107,13 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
-	var settle = __webpack_require__(/*! ./../core/settle */ 67);
-	var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ 59);
-	var buildFullPath = __webpack_require__(/*! ../core/buildFullPath */ 70);
-	var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ 73);
-	var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ 74);
-	var createError = __webpack_require__(/*! ../core/createError */ 68);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
+	var settle = __webpack_require__(/*! ./../core/settle */ 66);
+	var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ 58);
+	var buildFullPath = __webpack_require__(/*! ../core/buildFullPath */ 69);
+	var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ 72);
+	var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ 73);
+	var createError = __webpack_require__(/*! ../core/createError */ 67);
 	
 	module.exports = function xhrAdapter(config) {
 	  return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -35086,7 +35210,7 @@
 	    // This is only done if running in a standard browser environment.
 	    // Specifically not if we're in a web worker, or react-native.
 	    if (utils.isStandardBrowserEnv()) {
-	      var cookies = __webpack_require__(/*! ./../helpers/cookies */ 75);
+	      var cookies = __webpack_require__(/*! ./../helpers/cookies */ 74);
 	
 	      // Add xsrf header
 	      var xsrfValue = (config.withCredentials || isURLSameOrigin(fullPath)) && config.xsrfCookieName ?
@@ -35164,7 +35288,7 @@
 
 
 /***/ }),
-/* 67 */
+/* 66 */
 /*!************************************!*\
   !*** ./~/axios/lib/core/settle.js ***!
   \************************************/
@@ -35172,7 +35296,7 @@
 
 	'use strict';
 	
-	var createError = __webpack_require__(/*! ./createError */ 68);
+	var createError = __webpack_require__(/*! ./createError */ 67);
 	
 	/**
 	 * Resolve or reject a Promise based on response status.
@@ -35198,7 +35322,7 @@
 
 
 /***/ }),
-/* 68 */
+/* 67 */
 /*!*****************************************!*\
   !*** ./~/axios/lib/core/createError.js ***!
   \*****************************************/
@@ -35206,7 +35330,7 @@
 
 	'use strict';
 	
-	var enhanceError = __webpack_require__(/*! ./enhanceError */ 69);
+	var enhanceError = __webpack_require__(/*! ./enhanceError */ 68);
 	
 	/**
 	 * Create an Error with the specified message, config, error code, request and response.
@@ -35225,7 +35349,7 @@
 
 
 /***/ }),
-/* 69 */
+/* 68 */
 /*!******************************************!*\
   !*** ./~/axios/lib/core/enhanceError.js ***!
   \******************************************/
@@ -35276,7 +35400,7 @@
 
 
 /***/ }),
-/* 70 */
+/* 69 */
 /*!*******************************************!*\
   !*** ./~/axios/lib/core/buildFullPath.js ***!
   \*******************************************/
@@ -35284,8 +35408,8 @@
 
 	'use strict';
 	
-	var isAbsoluteURL = __webpack_require__(/*! ../helpers/isAbsoluteURL */ 71);
-	var combineURLs = __webpack_require__(/*! ../helpers/combineURLs */ 72);
+	var isAbsoluteURL = __webpack_require__(/*! ../helpers/isAbsoluteURL */ 70);
+	var combineURLs = __webpack_require__(/*! ../helpers/combineURLs */ 71);
 	
 	/**
 	 * Creates a new URL by combining the baseURL with the requestedURL,
@@ -35305,7 +35429,7 @@
 
 
 /***/ }),
-/* 71 */
+/* 70 */
 /*!**********************************************!*\
   !*** ./~/axios/lib/helpers/isAbsoluteURL.js ***!
   \**********************************************/
@@ -35328,7 +35452,7 @@
 
 
 /***/ }),
-/* 72 */
+/* 71 */
 /*!********************************************!*\
   !*** ./~/axios/lib/helpers/combineURLs.js ***!
   \********************************************/
@@ -35351,7 +35475,7 @@
 
 
 /***/ }),
-/* 73 */
+/* 72 */
 /*!*********************************************!*\
   !*** ./~/axios/lib/helpers/parseHeaders.js ***!
   \*********************************************/
@@ -35359,7 +35483,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	// Headers whose duplicates are ignored by node
 	// c.f. https://nodejs.org/api/http.html#http_message_headers
@@ -35413,7 +35537,7 @@
 
 
 /***/ }),
-/* 74 */
+/* 73 */
 /*!************************************************!*\
   !*** ./~/axios/lib/helpers/isURLSameOrigin.js ***!
   \************************************************/
@@ -35421,7 +35545,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -35490,7 +35614,7 @@
 
 
 /***/ }),
-/* 75 */
+/* 74 */
 /*!****************************************!*\
   !*** ./~/axios/lib/helpers/cookies.js ***!
   \****************************************/
@@ -35498,7 +35622,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ./../utils */ 56);
+	var utils = __webpack_require__(/*! ./../utils */ 55);
 	
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -35552,7 +35676,7 @@
 
 
 /***/ }),
-/* 76 */
+/* 75 */
 /*!*****************************************!*\
   !*** ./~/axios/lib/core/mergeConfig.js ***!
   \*****************************************/
@@ -35560,7 +35684,7 @@
 
 	'use strict';
 	
-	var utils = __webpack_require__(/*! ../utils */ 56);
+	var utils = __webpack_require__(/*! ../utils */ 55);
 	
 	/**
 	 * Config-specific merge-function which creates a new config-object
@@ -35634,7 +35758,7 @@
 
 
 /***/ }),
-/* 77 */
+/* 76 */
 /*!**************************************!*\
   !*** ./~/axios/lib/cancel/Cancel.js ***!
   \**************************************/
@@ -35662,7 +35786,7 @@
 
 
 /***/ }),
-/* 78 */
+/* 77 */
 /*!*******************************************!*\
   !*** ./~/axios/lib/cancel/CancelToken.js ***!
   \*******************************************/
@@ -35670,7 +35794,7 @@
 
 	'use strict';
 	
-	var Cancel = __webpack_require__(/*! ./Cancel */ 77);
+	var Cancel = __webpack_require__(/*! ./Cancel */ 76);
 	
 	/**
 	 * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -35728,7 +35852,7 @@
 
 
 /***/ }),
-/* 79 */
+/* 78 */
 /*!***************************************!*\
   !*** ./~/axios/lib/helpers/spread.js ***!
   \***************************************/
@@ -35764,7 +35888,7 @@
 
 
 /***/ }),
-/* 80 */
+/* 79 */
 /*!***********************************************!*\
   !*** ./react-client/src/state_coordinates.js ***!
   \***********************************************/
@@ -35775,6 +35899,18 @@
 	module.exports = {
 	  states: [{ name: 'AL', north: 32.7794, west: 86.8287 }, { name: 'AZ', north: 34.2744, west: 111.6602 }, { name: 'AR', north: 34.8938, west: 92.4426 }, { name: 'CA', north: 37.1841, west: 119.4696 }, { name: 'CO', north: 38.9972, west: 105.5478 }, { name: 'CT', north: 41.6219, west: 72.7273 }, { name: 'DE', north: 38.9896, west: 75.505 }, { name: 'DC', north: 38.9101, west: 77.0147 }, { name: 'FL', north: 28.6305, west: 82.4497 }, { name: 'GA', north: 32.6415, west: 83.4426 }, { name: 'ID', north: 44.3509, west: 114.613 }, { name: 'IL', north: 40.0417, west: 89.1965 }, { name: 'IN', north: 39.8942, west: 86.2816 }, { name: 'IA', north: 42.0751, west: 93.496 }, { name: 'KS', north: 38.4937, west: 98.3804 }, { name: 'KY', north: 37.5347, west: 85.3021 }, { name: 'LA', north: 31.0689, west: 91.9968 }, { name: 'ME', north: 45.3695, west: 69.2428 }, { name: 'MD', north: 39.055, west: 76.7909 }, { name: 'MA', north: 42.2596, west: 71.8083 }, { name: 'MI', north: 44.3467, west: 85.4102 }, { name: 'MN', north: 46.2807, west: 94.3053 }, { name: 'MS', north: 32.7364, west: 89.6678 }, { name: 'MO', north: 38.3566, west: 92.458 }, { name: 'MT', north: 47.0527, west: 109.6333 }, { name: 'NE', north: 41.5378, west: 99.7951 }, { name: 'NV', north: 39.3289, west: 116.6312 }, { name: 'NH', north: 43.6805, west: 71.5811 }, { name: 'NJ', north: 40.1907, west: 74.6728 }, { name: 'NM', north: 34.4071, west: 106.1126 }, { name: 'NY', north: 42.9538, west: 75.5268 }, { name: 'NC', north: 35.5557, west: 79.3877 }, { name: 'ND', north: 47.4501, west: 100.4659 }, { name: 'OH', north: 40.2862, west: 82.7937 }, { name: 'OK', north: 35.5889, west: 97.4943 }, { name: 'OR', north: 43.9336, west: 120.5583 }, { name: 'PA', north: 40.8781, west: 77.7996 }, { name: 'RI', north: 41.6762, west: 71.5562 }, { name: 'SC', north: 33.9169, west: 80.8964 }, { name: 'SD', north: 44.4443, west: 100.2263 }, { name: 'TN', north: 35.858, west: 86.3505 }, { name: 'TX', north: 31.4757, west: 99.3312 }, { name: 'UT', north: 39.3055, west: 111.6703 }, { name: 'VT', north: 44.0687, west: 72.6658 }, { name: 'VA', north: 37.5215, west: 78.8537 }, { name: 'WA', north: 47.3826, west: 120.4472 }, { name: 'WV', north: 38.6409, west: 80.6227 }, { name: 'WI', north: 44.6243, west: 89.9941 }, { name: 'WY', north: 42.9957, west: 107.5512 }]
 	};
+
+/***/ }),
+/* 80 */
+/*!********************!*\
+  !*** ./API_KEY.js ***!
+  \********************/
+/***/ (function(module, exports) {
+
+	const API_KEY = 'AIzaSyDUNXz5s2R30IpoysuPOr-_Klcq8syl37Y';
+	
+	module.exports = API_KEY;
+
 
 /***/ })
 /******/ ]);

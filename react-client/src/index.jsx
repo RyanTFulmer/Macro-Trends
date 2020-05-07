@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import Map from './components/map.jsx';
 import BasicDetails from './components/basicDetails.jsx';
@@ -6,10 +6,28 @@ import DataSelection from './components/dataSelection.jsx';
 import Axios from 'axios';
 import { states } from './state_coordinates';
 
+const bannerStyle = {
+  width: '100%',
+  height: '80px',
+  backgroundColor: '#00004d',
+  position: 'relative',
+  marginBottom: '20px',
+  color: 'white',
+  verticalAlign: 'middle',
+  padding: '10px',
+  fontFamily: 'Arial',
+};
+
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { playCoordinates: [], selectedFile: null, indexes: [] };
+    this.state = {
+      playCoordinates: [],
+      selectedFile: null,
+      indexes: [],
+      currentYear: '',
+      dataSelected: false,
+    };
     this.componentDidMount = this.componentDidMount.bind(this);
     this.handleDataChange = this.handleDataChange.bind(this);
     this.calculateCenter = this.calculateCenter.bind(this);
@@ -17,12 +35,14 @@ class App extends React.Component {
     this.onFileUpload = this.onFileUpload.bind(this);
     this.onFileChange = this.onFileChange.bind(this);
     this.fileData = this.fileData.bind(this);
+    this.yearChange = this.yearChange.bind(this);
   }
 
   handleDataChange(event) {
     Axios.get(`/data/?dataType=${event.target.value}`)
       .then((data) => {
-        this.setState({ currentData: data.data }, () => {
+        this.setState({ currentData: data.data, dataSelected: true }, () => {
+          console.log('this.state.currentData', this.state.currentData);
           this.calculateCenter();
         });
       })
@@ -32,15 +52,25 @@ class App extends React.Component {
   }
 
   playMap() {
-    console.log('this.state', this.state);
-    let starter = [];
-    for (let year = 0; year < this.state.finalCoordinates.length; year++) {
-      setTimeout(function () {
-        let temp = this.state.playCoordinates;
-        temp.push(year);
-        setState({ playCoordinates: temp });
-      }, 400);
-    }
+    let counter = 0;
+    let maxCounter = this.state.finalCoordinates.length;
+    this.timer = setInterval(() => {
+      if (counter === maxCounter - 1) {
+        clearInterval(this.timer);
+      }
+      let currentYear = this.state.currentData[counter]['Year'];
+      let currentCoords = this.state.playCoordinates;
+      currentCoords.push(this.state.finalCoordinates[counter]);
+      this.yearChange(currentCoords, currentYear);
+      counter++;
+    }, 200);
+  }
+
+  yearChange(newEntry, currentYear) {
+    this.setState({
+      playCoordinates: newEntry,
+      currentYear: currentYear,
+    });
   }
 
   // On file select (from the pop up)
@@ -52,7 +82,6 @@ class App extends React.Component {
   // On file upload (click the upload button)
   onFileUpload() {
     // Create an object of formData
-    console.log('this.state before file this.onFileUpload', this.state);
     const formData = new FormData();
     // Update the formData object
     formData.append(
@@ -61,7 +90,6 @@ class App extends React.Component {
       this.state.selectedFile.name
     );
     // Details of the uploaded file
-    console.log('formData', formData);
     // Request made to the backend api
     // Send formData object
     Axios.post('/data', formData)
@@ -92,7 +120,14 @@ class App extends React.Component {
       return (
         <div>
           <br />
-          <h4>Choose before Pressing the Upload button</h4>
+          <div style={{ fontStyle: 'italic' }}>
+            Note: the uploaded data must be saved in a precise format by year
+            and abbreviated state acronym. A template can be found{' '}
+            <a href="https://docs.google.com/spreadsheets/d/1wW2-udneHi491-px6hM3VsZXi7ak9NGm-Yd04eJi8c0/edit?usp=sharing">
+              here
+            </a>
+            .
+          </div>
         </div>
       );
     }
@@ -111,7 +146,6 @@ class App extends React.Component {
         const dataAmount = this.state.currentData[row][
           states[eachState]['name']
         ];
-        // console.log(states[eachState]['name'], dataAmount);
         const northCoord = states[eachState]['north'];
         const westCoord = states[eachState]['west'];
         //get totals for coordinates
@@ -146,26 +180,70 @@ class App extends React.Component {
   }
 
   render() {
-    console.log('this.state.indexes', this.state.indexes);
+    let playbutton = <div></div>;
+    if (this.state.dataSelected === true) {
+      playbutton = (
+        <div>
+          <button class="button is-medium" onClick={this.playMap}>
+            Play!
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div>
-        <Map coordinates={this.state.finalCoordinates} />
-
-        <div style={{ marginTop: '20px' }}>
-          <DataSelection
-            handleDataChange={this.handleDataChange}
-            state={this.state}
-          />
+        <div style={bannerStyle}>
+          <h1 class="title is-1" style={{ color: 'white' }}>
+            Macro Trends
+          </h1>
         </div>
-
-        {/* <BasicDetails />
-        <PlayButton playMap={this.playMap} /> */}
-        <div style={{ marginTop: '20px' }}>
-          <div>
-            <input type="file" onChange={this.onFileChange} />
-            <button onClick={this.onFileUpload}>Upload!</button>
+        <div style={{ float: 'left', margin: '10px', width: '300px' }}>
+          <div style={{ marginTop: '20px' }}>
+            <DataSelection
+              handleDataChange={this.handleDataChange}
+              state={this.state}
+            />
           </div>
-          {this.fileData()}
+          <div class="columns" style={{ marginTop: '15px' }}>
+            <div class="column">{playbutton}</div>
+            <div class="column" style={{ verticalAlign: 'middle' }}>
+              <BasicDetails year={this.state.currentYear} />
+            </div>
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <hr />
+            <div>
+              <h2 class="subtitle is-4" style={{ textAlign: 'center' }}>
+                Or upload your own data!
+              </h2>
+              <div class="columns" style={{ marginTop: '15px' }}>
+                <div class="column" style={{ textAlign: 'center' }}>
+                  <div class="file">
+                    <label class="file-label">
+                      <input
+                        class="file-input"
+                        type="file"
+                        onChange={this.onFileChange}
+                      />
+                      <span class="file-cta">
+                        <span class="file-label">Choose a file…</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div class="column" style={{ textAlign: 'center' }}>
+                  <button class="button " onClick={this.onFileUpload}>
+                    Upload!
+                  </button>
+                </div>
+              </div>
+            </div>
+            {this.fileData()}
+          </div>
+        </div>
+        <div style={{ float: 'left', margin: '10px' }}>
+          <Map coordinates={this.state.playCoordinates} />
         </div>
       </div>
     );
