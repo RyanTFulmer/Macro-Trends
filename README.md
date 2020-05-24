@@ -3,7 +3,6 @@ _Developed by Ryan Fulmer_
 
 Full-stack application to calculate the geographic middle of America based on user-input data
 
-<br><br>
 ![macro-details](https://recordit.co/iEXLqG9Y5O.gif)
 <br><br>
 
